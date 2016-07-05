@@ -1,7 +1,6 @@
 package com.moguhu.id.creator.zk;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -11,6 +10,9 @@ import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import com.moguhu.id.creator.IdWorker;
 
 
 /**
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory;
  * @author xuefeihu
  *
  */
+@Component
 public class ZooKeeperOperator extends AbstractZooKeeper {
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(ZooKeeperOperator.class);
@@ -55,25 +58,29 @@ public class ZooKeeperOperator extends AbstractZooKeeper {
 	
 	public byte[] getData(String path) throws KeeperException, InterruptedException {   
         return  this.zooKeeper.getData(path, false,null);   
-    }  
+    }
 	
-	 public static void main(String[] args) {
+	/**
+	 * get IdWorker
+	 * @return
+	 */
+	public IdWorker generateWorker() {
+		
+		IdWorker worker = null;
 		try {
 			ZooKeeperOperator zkoperator = new ZooKeeperOperator();
 			zkoperator.connect("127.0.0.1");
 
-			byte[] data = "payengine".getBytes();
-
 			try {
-				zkoperator.create("/payengine", data, CreateMode.PERSISTENT);
+				zkoperator.create("/payengine", null, CreateMode.PERSISTENT);
 			} catch (NodeExistsException e) {
+				LOGGER.info(" payengine node has exists. ");
 				// do nothing
 			}
-			LOGGER.info(Arrays.toString(zkoperator.getData("/payengine")));
 			
 			List<String> children = zkoperator.getChild("/payengine");
+			int i = 1;
 			if(CollectionUtils.isNotEmpty(children)) {
-				int i = 1;
 				while(i <= Integer.MAX_VALUE) {
 					if(!children.contains(String.valueOf(i))) {
 						zkoperator.create("/payengine/" + i, String.valueOf(i).getBytes(), CreateMode.EPHEMERAL);
@@ -82,26 +89,17 @@ public class ZooKeeperOperator extends AbstractZooKeeper {
 					i++;
 				}
 			} else {
-				zkoperator.create("/payengine/" + 1, String.valueOf(1).getBytes(), CreateMode.EPHEMERAL);
+				zkoperator.create("/payengine/" + i, String.valueOf(i).getBytes(), CreateMode.EPHEMERAL);
 			}
-
-			// zkoperator.create("/root/child1",data);
-			// System.out.println(Arrays.toString(zkoperator.getData("/root/child1")));
-			//
-			// zkoperator.create("/root/child2",data);
-			// System.out.println(Arrays.toString(zkoperator.getData("/root/child2")));
-
-			// String zktest = "ZooKeeper的Java API测试";
-			// zkoperator.create("/root/child3", zktest.getBytes());
-
-			// LOGGER.debug("获取设置的信息：" + new
-			// String(zkoperator.getData("/root/child3")));
-
-			zkoperator.close();
+			
+			worker = new IdWorker(i, 1L);
+			worker.setKeeperOperator(zkoperator);
+//			zkoperator.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		return worker;
 	}
+	
 }

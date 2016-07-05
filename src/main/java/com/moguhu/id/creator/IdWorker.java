@@ -3,6 +3,8 @@ package com.moguhu.id.creator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.moguhu.id.creator.zk.ZooKeeperOperator;
+
 /**
  * @author zhujuan From: https://github.com/twitter/snowflake An object that
  *         generates IDs. This is broken into a separate class in case we ever
@@ -11,6 +13,8 @@ import org.slf4j.LoggerFactory;
 public class IdWorker {
 
 	protected static final Logger LOG = LoggerFactory.getLogger(IdWorker.class);
+	
+	private ZooKeeperOperator keeperOperator;
 
 	private long workerId;
 	private long datacenterId;
@@ -83,4 +87,13 @@ public class IdWorker {
 	protected long timeGen() {
 		return System.currentTimeMillis();
 	}
+
+	public ZooKeeperOperator getKeeperOperator() {
+		return keeperOperator;
+	}
+
+	public void setKeeperOperator(ZooKeeperOperator keeperOperator) {
+		this.keeperOperator = keeperOperator;
+	}
+	
 }
